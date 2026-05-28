@@ -1,0 +1,126 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-05-28T06:12:41+00:00",
+    "name": "Romestead",
+    "author": "pinkyd.fetch623@passinbox.com",
+    "uuid": "012f8c10-fa04-481c-b471-ecf3965c85eb",
+    "description": "Romestead is a multiplayer survival and settlement-building game. This egg installs and runs the official Romestead Dedicated Server (Steam App ID 4763510) on Linux using the bundled .NET 8 runtime. The server listens on UDP and is configured via config.json.",
+    "tags": [
+        "steamcmd"
+    ],
+    "features": [
+        "steam_disk_space"
+    ],
+    "docker_images": {
+        "ghcr.io/pelican-eggs/steamcmd:dotnet": "ghcr.io/pelican-eggs/steamcmd:dotnet"
+    },
+    "file_denylist": [],
+    "startup": "dotnet Server.dll",
+    "config": {
+        "files": "{\n    \"config.json\": {\n        \"parser\": \"json\",\n        \"find\": {\n            \"Port\": \"{{server.build.default.port}}\",\n            \"Password\": \"{{server.build.env.SERVER_PASSWORD}}\",\n            \"MaxPlayers\": \"{{server.build.env.MAX_PLAYERS}}\",\n            \"AutoStartWorldName\": \"{{server.build.env.WORLD_NAME}}\",\n            \"AutoCreateWorldSize\": \"{{server.build.env.WORLD_SIZE}}\"\n        }\n    }\n}",
+        "startup": "{\n    \"done\": \"World loaded\"\n}",
+        "logs": "{}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n# Romestead Dedicated Server installation script\n#\n# Server files: /mnt/server\n# Install container: ghcr.io/pelican-eggs/installers:debian\n\n## fall back to anonymous Steam login if no creds were provided\nif [[ \"${STEAM_USER}\" == \"\" ]] || [[ \"${STEAM_PASS}\" == \"\" ]]; then\n    echo -e \"steam user is not set.\\n\"\n    echo -e \"Using anonymous user.\\n\"\n    STEAM_USER=anonymous\n    STEAM_PASS=\"\"\n    STEAM_AUTH=\"\"\nelse\n    echo -e \"user set to ${STEAM_USER}\"\nfi\n\n## download and install steamcmd\ncd /tmp\nmkdir -p /mnt/server/steamcmd\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzvf steamcmd.tar.gz -C /mnt/server/steamcmd\nmkdir -p /mnt/server/steamapps\ncd /mnt/server/steamcmd\n\n## SteamCMD needs to own /mnt during install; permissions are reset by the panel afterward.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\n## install Romestead Dedicated Server\n./steamcmd.sh +force_install_dir /mnt/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s \"-beta ${SRCDS_BETAID}\" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s \"-betapassword ${SRCDS_BETAPASS}\" ) validate +quit\n\n## set up 64-bit steamclient.so so the server can locate it at runtime\nmkdir -p /mnt/server/.steam/sdk64\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n## generate a default config.json on first install\nCONFIG_FILE=/mnt/server/config.json\n\nif [ ! -f \"$CONFIG_FILE\" ]; then\n    echo \"Generating default config.json\"\n    cat > \"$CONFIG_FILE\" <<EOF\n{\n    \"AutoStartWorldName\": \"${WORLD_NAME}\",\n    \"AutoCreateAndLoadWorld\": true,\n    \"AutoCreateWorldSize\": ${WORLD_SIZE},\n    \"Password\": \"${SERVER_PASSWORD}\",\n    \"Port\": ${SERVER_PORT},\n    \"MaxPlayers\": ${MAX_PLAYERS},\n    \"EnableCheats\": false\n}\nEOF\nfi\n\necho \"-----------------------------------------\"\necho \"Installation completed...\"\necho \"-----------------------------------------\"",
+            "container": "ghcr.io/pelican-eggs/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "World Name",
+            "description": "Name of the world to auto-load on startup. Used as AutoStartWorldName in config.json.",
+            "env_variable": "WORLD_NAME",
+            "default_value": "auto",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:32",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "World Size",
+            "description": "0 = Small, 1 = Standard, 2 = Large. Large worlds require at least 8 GB of RAM to generate.",
+            "env_variable": "WORLD_SIZE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1,2",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Server Password",
+            "description": "Password required to join the server. Set to an empty value for no password.",
+            "env_variable": "SERVER_PASSWORD",
+            "default_value": "change-me",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Max Players",
+            "description": "Maximum number of concurrent players. The wiki recommends 8 GB RAM for 5 or more players.",
+            "env_variable": "MAX_PLAYERS",
+            "default_value": "8",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1,64",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Steam App ID",
+            "description": "DO NOT EDIT. Steam App ID for the Romestead Dedicated Server.",
+            "env_variable": "SRCDS_APPID",
+            "default_value": "4763510",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|in:4763510",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Re-run the SteamCMD install step on every server boot to keep the build current. 0 disables, 1 enables.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "boolean",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Steam Beta Branch",
+            "description": "Optional Steam beta branch name to install (e.g. for experimental builds). Leave blank for the default branch.",
+            "env_variable": "SRCDS_BETAID",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Steam Beta Password",
+            "description": "Optional password for the Steam beta branch above. Leave blank if the branch does not require one.",
+            "env_variable": "SRCDS_BETAPASS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "sort": null,
+            "field_type": "text"
+        }
+    ]
+}
