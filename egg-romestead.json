@@ -19,7 +19,7 @@
         "ghcr.io/pelican-eggs/steamcmd:dotnet": "ghcr.io/pelican-eggs/steamcmd:dotnet"
     },
     "file_denylist": [],
-    "startup": "HOME=/home/container XDG_DATA_HOME=/home/container/.local/share dotnet Server.dll",
+    "startup": "bash -c 'export HOME=/home/container XDG_DATA_HOME=/home/container/.local/share XDG_CONFIG_HOME=/home/container/.config; mkdir -p $XDG_DATA_HOME/GameAnalytics $XDG_CONFIG_HOME/GameAnalytics; exec dotnet Server.dll'",
     "config": {
         "files": "{\n    \"config.json\": {\n        \"parser\": \"json\",\n        \"find\": {\n            \"Port\": \"{{server.build.default.port}}\",\n            \"Password\": \"{{server.build.env.SERVER_PASSWORD}}\",\n            \"MaxPlayers\": \"{{server.build.env.MAX_PLAYERS}}\",\n            \"AutoStartWorldName\": \"{{server.build.env.WORLD_NAME}}\",\n            \"AutoCreateWorldSize\": \"{{server.build.env.WORLD_SIZE}}\"\n        }\n    }\n}",
         "startup": "{\n    \"done\": \"World loaded\"\n}",
