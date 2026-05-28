@@ -42,10 +42,3 @@ The Steam App ID is locked to `4763510`.
 
 Per the Romestead wiki: 4 GB RAM for standard worlds with ≤ 4 players,
 8 GB RAM for large worlds or 5+ players. The default port is **UDP 8050** but it will use your primary port allocation automatically.
-
-## Tuning the ready-indicator
-
-The egg's `config.startup.done` string is currently `"World loaded"` as a
-conservative placeholder. If the panel never marks the server as "running"
-after startup, replace that string with whatever line your console actually
-prints when the world finishes loading.
