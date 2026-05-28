@@ -41,7 +41,7 @@ The Steam App ID is locked to `4763510`.
 ## Resource recommendations
 
 Per the Romestead wiki: 4 GB RAM for standard worlds with ≤ 4 players,
-8 GB RAM for large worlds or 5+ players. The default port is **UDP 8050**.
+8 GB RAM for large worlds or 5+ players. The default port is **UDP 8050** but it will use your primary port allocation automatically.
 
 ## Tuning the ready-indicator
 
