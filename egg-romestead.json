@@ -21,14 +21,14 @@
     "file_denylist": [],
     "startup": "bash -c 'export HOME=/home/container XDG_DATA_HOME=/home/container/.local/share XDG_CONFIG_HOME=/home/container/.config; mkdir -p $XDG_DATA_HOME/GameAnalytics $XDG_CONFIG_HOME/GameAnalytics; exec dotnet Server.dll'",
     "config": {
-        "files": "{\n    \"config.json\": {\n        \"parser\": \"json\",\n        \"find\": {\n            \"Port\": \"{{server.build.default.port}}\",\n            \"Password\": \"{{server.build.env.SERVER_PASSWORD}}\",\n            \"MaxPlayers\": \"{{server.build.env.MAX_PLAYERS}}\",\n            \"AutoStartWorldName\": \"{{server.build.env.WORLD_NAME}}\",\n            \"AutoCreateWorldSize\": \"{{server.build.env.WORLD_SIZE}}\"\n        }\n    }\n}",
+        "files": "{\n    \"config.json\": {\n        \"parser\": \"json\",\n        \"find\": {\n            \"Port\": \"{{server.build.default.port}}\",\n            \"Password\": \"{{server.build.env.SERVER_PASSWORD}}\",\n            \"MaxPlayers\": \"{{server.build.env.MAX_PLAYERS}}\",\n            \"AutoStartWorldName\": \"{{server.build.env.WORLD_NAME}}\",\n            \"AutoCreateWorldSize\": \"{{server.build.env.WORLD_SIZE}}\",\n            \"SleepThresholdMs\": \"{{server.build.env.SLEEP_THRESHOLD_MS}}\"\n        }\n    }\n}",
         "startup": "{\n    \"done\": \"Server ready\"\n}",
         "logs": "{}",
         "stop": "stop"
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n# Romestead Dedicated Server installation script\n#\n# Server files: /mnt/server\n# Install container: ghcr.io/pelican-eggs/installers:debian\n\n## fall back to anonymous Steam login if no creds were provided\nif [[ \"${STEAM_USER}\" == \"\" ]] || [[ \"${STEAM_PASS}\" == \"\" ]]; then\n    echo -e \"steam user is not set.\\n\"\n    echo -e \"Using anonymous user.\\n\"\n    STEAM_USER=anonymous\n    STEAM_PASS=\"\"\n    STEAM_AUTH=\"\"\nelse\n    echo -e \"user set to ${STEAM_USER}\"\nfi\n\n## download and install steamcmd\ncd /tmp\nmkdir -p /mnt/server/steamcmd\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzvf steamcmd.tar.gz -C /mnt/server/steamcmd\nmkdir -p /mnt/server/steamapps\ncd /mnt/server/steamcmd\n\n## SteamCMD needs to own /mnt during install; permissions are reset by the panel afterward.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\n## install Romestead Dedicated Server\n./steamcmd.sh +force_install_dir /mnt/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s \"-beta ${SRCDS_BETAID}\" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s \"-betapassword ${SRCDS_BETAPASS}\" ) validate +quit\n\n## set up 64-bit steamclient.so so the server can locate it at runtime\nmkdir -p /mnt/server/.steam/sdk64\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n## generate a default config.json on first install\nCONFIG_FILE=/mnt/server/config.json\n\nif [ ! -f \"$CONFIG_FILE\" ]; then\n    echo \"Generating default config.json\"\n    cat > \"$CONFIG_FILE\" <<EOF\n{\n    \"AutoStartWorldName\": \"${WORLD_NAME}\",\n    \"AutoCreateAndLoadWorld\": true,\n    \"AutoCreateWorldSize\": ${WORLD_SIZE},\n    \"Password\": \"${SERVER_PASSWORD}\",\n    \"Port\": ${SERVER_PORT},\n    \"MaxPlayers\": ${MAX_PLAYERS},\n    \"EnableCheats\": false\n}\nEOF\nfi\n\necho \"-----------------------------------------\"\necho \"Installation completed...\"\necho \"-----------------------------------------\"",
+            "script": "#!/bin/bash\n# Romestead Dedicated Server installation script\n#\n# Server files: /mnt/server\n# Install container: ghcr.io/pelican-eggs/installers:debian\n\n## fall back to anonymous Steam login if no creds were provided\nif [[ \"${STEAM_USER}\" == \"\" ]] || [[ \"${STEAM_PASS}\" == \"\" ]]; then\n    echo -e \"steam user is not set.\\n\"\n    echo -e \"Using anonymous user.\\n\"\n    STEAM_USER=anonymous\n    STEAM_PASS=\"\"\n    STEAM_AUTH=\"\"\nelse\n    echo -e \"user set to ${STEAM_USER}\"\nfi\n\n## download and install steamcmd\ncd /tmp\nmkdir -p /mnt/server/steamcmd\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzvf steamcmd.tar.gz -C /mnt/server/steamcmd\nmkdir -p /mnt/server/steamapps\ncd /mnt/server/steamcmd\n\n## SteamCMD needs to own /mnt during install; permissions are reset by the panel afterward.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\n## install Romestead Dedicated Server\n./steamcmd.sh +force_install_dir /mnt/server +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s \"-beta ${SRCDS_BETAID}\" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s \"-betapassword ${SRCDS_BETAPASS}\" ) validate +quit\n\n## set up 64-bit steamclient.so so the server can locate it at runtime\nmkdir -p /mnt/server/.steam/sdk64\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n## generate a default config.json on first install\nCONFIG_FILE=/mnt/server/config.json\n\nif [ ! -f \"$CONFIG_FILE\" ]; then\n    echo \"Generating default config.json\"\n    cat > \"$CONFIG_FILE\" <<EOF\n{\n    \"AutoStartWorldName\": \"${WORLD_NAME}\",\n    \"AutoCreateAndLoadWorld\": true,\n    \"AutoCreateWorldSize\": ${WORLD_SIZE},\n    \"Password\": \"${SERVER_PASSWORD}\",\n    \"Port\": ${SERVER_PORT},\n    \"MaxPlayers\": ${MAX_PLAYERS},\n    \"SleepThresholdMs\": ${SLEEP_THRESHOLD_MS},\n    \"EnableCheats\": false\n}\nEOF\nfi\n\necho \"-----------------------------------------\"\necho \"Installation completed...\"\necho \"-----------------------------------------\"",
             "container": "ghcr.io/pelican-eggs/installers:debian",
             "entrypoint": "bash"
         }
@@ -75,6 +75,17 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|numeric|between:1,64",
+            "sort": null,
+            "field_type": "text"
+        },
+        {
+            "name": "Sleep Threshold (ms)",
+            "description": "Controls if/when the server thread sleeps. Accepted sleep values are 1.0 to 16.5; anything outside that range disables sleeping. The game default is 10 (sleeps when load is low). Defaulted to 3 here as the recommended balance: low CPU usage with minimal jitter. Set to -1 to minimise jitter the most (best gameplay experience) at the cost of 100% CPU usage.",
+            "env_variable": "SLEEP_THRESHOLD_MS",
+            "default_value": "3",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric",
             "sort": null,
             "field_type": "text"
         },
